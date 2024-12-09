@@ -47,6 +47,15 @@ module top(
     end
 
     always_comb begin
+        // デフォルト値
+        step_next = step;
+        tick_next = tick;
+        mem_valid_next = mem_valid;
+        mem_addr_next = mem_addr;
+        mem_wdata_next = mem_wdata;
+        mem_wstrb_next = mem_wstrb;
+        led_next = led;
+
         case (step)
             0: begin
                 // 初期化
@@ -61,7 +70,6 @@ module top(
             1: begin
                 // メモリの 0x00 番地を読み込み
                 mem_addr_next = 32'h0000;
-                mem_wdata_next = 32'hxxxx;
                 mem_wstrb_next = 4'b0000;
                 if (mem_ready) begin
                     // mem_ready がアサートされるまで待機
@@ -71,9 +79,6 @@ module top(
                     led_next = mem_rdata; // 読み込んだデータをLEDに表示
                 end else begin
                     mem_valid_next = 1; // mem_valid をアサート
-                    step_next = step;
-                    tick_next = tick;
-                    led_next = led;
                 end
             end
             2: begin
@@ -83,21 +88,12 @@ module top(
                     step_next = 3; // ステップ0へ遷移
                     tick_next = 0; // 1秒待機用のカウンタをリセット
                 end else begin
-                    step_next = step;
                     tick_next = tick + 1;
                 end
-
-                // そのまま
-                mem_valid_next = mem_valid;
-                mem_addr_next = mem_addr;
-                mem_wdata_next = mem_wdata;
-                mem_wstrb_next = mem_wstrb;
-                led_next = led;
             end
             3: begin
                 // メモリの 0x04 番地を読み込み
                 mem_addr_next = 32'h0004;
-                mem_wdata_next = 32'hxxxx;
                 mem_wstrb_next = 4'b0000;
                 if (mem_ready) begin
                     // mem_ready がアサートされるまで待機
@@ -107,9 +103,6 @@ module top(
                     led_next = mem_rdata; // 読み込んだデータをLEDに表示
                 end else begin
                     mem_valid_next = 1; // mem_valid をアサート
-                    step_next = step;
-                    tick_next = tick;
-                    led_next = led;
                 end
             end
             4: begin
@@ -119,16 +112,8 @@ module top(
                     step_next = 0; // ステップ0へ遷移
                     tick_next = 0; // 1秒待機用のカウンタをリセット
                 end else begin
-                    step_next = step;
                     tick_next = tick + 1;
                 end
-
-                // そのまま
-                mem_valid_next = mem_valid;
-                mem_addr_next = mem_addr;
-                mem_wdata_next = mem_wdata;
-                mem_wstrb_next = mem_wstrb;
-                led_next = led;
             end
             default: begin
                 // 何もしない
@@ -142,15 +127,5 @@ module top(
             end
         endcase
     end
-
-
-    // logic [24:0] counter;
-
-    // always_ff @(posedge clk_25mhz) begin
-    //     counter <= counter + 1;
-    // end
-
-    // // LEDに、常時点灯、ボタン1、ボタン2、カウンタの上位5ビットを表示
-    // assign led = { 1, btn[1], btn[2], counter[24:20] };
 
 endmodule
