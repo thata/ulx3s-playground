@@ -31,6 +31,8 @@ module bram_controller(
     logic mem_ready_next;
     logic [31:0] mem_rdata_next;
 
+    assign mem_rdata_next = mem[mem_addr[9:2]];
+
     // メモリの初期化
     initial begin
         mem[0] = 32'b0101;
@@ -64,28 +66,18 @@ module bram_controller(
             STATE_IDLE: begin
                 state_next = (mem_valid) ? STATE_RECV_VALID : STATE_IDLE;
                 mem_ready_next = 0;
-                mem_rdata_next = 32'd0;
             end
             STATE_RECV_VALID: begin
-                // 1 サイクル待機する
-                state_next = STATE_RECV_VALID2;
-                mem_ready_next = mem_ready;
-                mem_rdata_next = mem_rdata;
-            end
-            STATE_RECV_VALID2: begin
                 state_next = STATE_SEND_READY;
                 mem_ready_next = 1;
-                mem_rdata_next = mem[mem_addr[9:2]];
             end
             STATE_SEND_READY: begin
                 state_next = STATE_IDLE;
                 mem_ready_next = 0;
-                mem_rdata_next = 32'd0;
             end
             default: begin
                 state_next = STATE_IDLE;
                 mem_ready_next = 0;
-                mem_rdata_next = 32'd0;
             end
         endcase
     end
