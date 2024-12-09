@@ -56,7 +56,7 @@ module bram_controller_test();
 
         // mem_ready = 1、かつ mem_rdata = 0x0004 であること
         assert(mem_ready == 1);
-        assert(mem_rdata == 32'h0004);
+        assert(mem_rdata == 32'h0004) else $error("mem_rdata = %h", mem_rdata);
 
         // mem_valid をデアサート
         mem_valid = 0;
@@ -77,7 +77,7 @@ module bram_controller_test();
 
         // mem_ready = 1 かつ mem_rdata = 0x0008 であること
         assert(mem_ready == 1) else $error("mem_ready = 0");
-        assert(mem_rdata == 32'h0008) else $error("mem_rdata = 0x%h", mem_rdata);
+        assert(mem_rdata == 32'h0008) else $error("mem_rdata = %h", mem_rdata);
 
         // mem_valid をデアサート
         mem_valid = 0;
