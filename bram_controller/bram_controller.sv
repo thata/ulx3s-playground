@@ -58,6 +58,12 @@ module bram_controller(
             state <= state_next;
             mem_ready <= mem_ready_next;
             mem_rdata <= mem_rdata_next;
+
+            // メモリへの書き込み
+            // NOTE: 現状は1ワードの書き込みのみに対応
+            if (mem_wstrb == 4'b1111 && mem_valid) begin
+                mem[mem_addr[9:2]] <= mem_wdata;
+            end
         end
     end
 

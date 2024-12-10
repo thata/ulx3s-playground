@@ -65,7 +65,10 @@ module top(
         case (step)
             0: begin
                 // 初期化
-                step_next = 1; // ステップ1へ遷移
+
+                step_next = 3; // 3で書き込んでから、1の読み込みへ行くぞ
+                // step_next = 1; // ステップ1へ遷移
+
                 tick_next = 0;
                 counter_next = 0;
                 mem_valid_next = 0;
@@ -81,7 +84,7 @@ module top(
                     mem_valid_next = 0; // mem_valid をデアサート
                     step_next = 2; // ステップ2へ遷移
                     tick_next = 0; // 1秒待機用のカウンタをリセット
-                    counter_next = (counter < 10) ? counter + 1 : 0; // 次のアドレスを指定
+                    counter_next = (counter == 7) ? 0 : counter + 1; // 次のアドレスを指定
                     led_next = mem_rdata; // 読み込んだデータをLEDに表示
                 end else begin
                     // 指定番地のデータを読み込み
@@ -98,6 +101,35 @@ module top(
                     tick_next = 0; // 待機用のカウンタをリセット
                 end else begin
                     tick_next = tick + 1;
+                end
+            end
+            3: begin
+                // メモリへ書き込み
+                if (mem_ready) begin // mem_ready がアサートされるまで待機
+                    mem_valid_next = 0; // mem_valid をデアサート
+                    counter_next = counter + 1;
+
+                    step_next = 4; // ステップ4へ遷移
+                end else begin
+                    // 指定番地にデータを書き込み
+                    mem_addr_next = counter << 2; // 4バイト単位でアクセスするため、2ビット左シフト
+
+                    // counter が偶数なら 0b10101010、奇数なら 0b01010101 を書き込む
+                    mem_wdata_next = (counter & 1) ? 32'b01010101 : 32'b10101010;
+
+                    mem_wstrb_next = 4'b1111;
+                    mem_valid_next = 1;
+
+                    step_next = 3; // 3へ戻り、mem_ready を待機
+                end
+            end
+            4: begin
+                // counter 0 から 7 まで書き込んだら 1 へ遷移
+                if (counter > 7) begin
+                    counter_next = 0; // counter を初期化
+                    step_next = 1; // ステップ1へ遷移
+                end else begin
+                    step_next = 3; // 3へ戻る
                 end
             end
             default: begin
