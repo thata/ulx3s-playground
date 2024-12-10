@@ -1,5 +1,5 @@
 // BRAMコントローラーのテスト回路
-// 0番地から36番地まで（10ワード分）のデータを読み込んでLEDに表示する
+// 0番地から28番地までパターンデータを書き込み、その後それを読み込んでLEDに表示する
 module top(
     input wire clk_25mhz,
     output wire [7:0] led,
@@ -63,9 +63,7 @@ module top(
         led_next = led;
 
         case (step)
-            0: begin
-                // 初期化
-
+            0: begin // 初期化
                 step_next = 3; // 3で書き込んでから、1の読み込みへ行くぞ
                 // step_next = 1; // ステップ1へ遷移
 
@@ -77,8 +75,7 @@ module top(
                 mem_wstrb_next = 4'bxxxx; // 0000 は読み込み
                 led_next = 8'b10101010;
             end
-            1: begin
-                // メモリを読み込み
+            1: begin // メモリを読み込み
                 if (mem_ready) begin
                     // mem_ready がアサートされるまで待機
                     mem_valid_next = 0; // mem_valid をデアサート
@@ -93,18 +90,16 @@ module top(
                     mem_valid_next = 1;
                 end
             end
-            2: begin
-                // 0.1 秒スリープ
-                if (tick == 2_500_0000) begin
-                    // スリープ終わり
-                    step_next = 1; // ステップ1へ遷移
-                    tick_next = 0; // 待機用のカウンタをリセット
+            2: begin // スリープ
+                if (tick == 25_000_000) begin
+                    // スリープ終了
+                    step_next = 1;
+                    tick_next = 0;
                 end else begin
                     tick_next = tick + 1;
                 end
             end
-            3: begin
-                // メモリへ書き込み
+            3: begin // メモリへ書き込み
                 if (mem_ready) begin // mem_ready がアサートされるまで待機
                     mem_valid_next = 0; // mem_valid をデアサート
                     counter_next = counter + 1;
@@ -123,7 +118,7 @@ module top(
                     step_next = 3; // 3へ戻り、mem_ready を待機
                 end
             end
-            4: begin
+            4: begin // 8回書き込むまでループ
                 // counter 0 から 7 まで書き込んだら 1 へ遷移
                 if (counter > 7) begin
                     counter_next = 0; // counter を初期化
