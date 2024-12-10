@@ -1,3 +1,5 @@
+// BRAMコントローラーのテスト回路
+// 0番地から36番地まで（10ワード分）のデータを読み込んでLEDに表示する
 module top(
     input wire clk_25mhz,
     output wire [7:0] led,
@@ -5,7 +7,8 @@ module top(
 );
 
     logic [7:0] step = 0;
-    logic [31:0] tick = 0; // 1秒待機用のカウンタ
+    logic [31:0] tick = 0; // スリープ用のカウンタ
+    logic [7:0] counter = 0; // メモリアドレス指示用のカウンタ
     logic mem_valid;
     logic mem_ready;
     logic [31:0] mem_addr;
@@ -15,6 +18,7 @@ module top(
 
     logic [7:0] step_next;
     logic [31:0] tick_next;
+    logic [7:0] counter_next;
     logic mem_valid_next;
     logic [31:0] mem_addr_next;
     logic [31:0] mem_wdata_next;
@@ -39,6 +43,7 @@ module top(
     always_ff @(posedge clk_25mhz) begin
         step <= step_next;
         tick <= tick_next;
+        counter <= counter_next;
         mem_valid <= mem_valid_next;
         mem_addr <= mem_addr_next;
         mem_wdata <= mem_wdata_next;
@@ -50,6 +55,7 @@ module top(
         // デフォルト値
         step_next = step;
         tick_next = tick;
+        counter_next = counter;
         mem_valid_next = mem_valid;
         mem_addr_next = mem_addr;
         mem_wdata_next = mem_wdata;
@@ -61,69 +67,42 @@ module top(
                 // 初期化
                 step_next = 1; // ステップ1へ遷移
                 tick_next = 0;
+                counter_next = 0;
                 mem_valid_next = 0;
                 mem_addr_next = 32'h0000;
                 mem_wdata_next = 32'hxxxx;
                 mem_wstrb_next = 4'bxxxx; // 0000 は読み込み
-                led_next = 8'b10000001;
+                led_next = 8'b10101010;
             end
             1: begin
-                // メモリの 0x00 番地を読み込み
-                mem_addr_next = 32'h0000;
-                mem_wstrb_next = 4'b0000;
+                // メモリを読み込み
                 if (mem_ready) begin
                     // mem_ready がアサートされるまで待機
                     mem_valid_next = 0; // mem_valid をデアサート
                     step_next = 2; // ステップ2へ遷移
                     tick_next = 0; // 1秒待機用のカウンタをリセット
+                    counter_next = (counter < 10) ? counter + 1 : 0; // 次のアドレスを指定
                     led_next = mem_rdata; // 読み込んだデータをLEDに表示
                 end else begin
-                    mem_valid_next = 1; // mem_valid をアサート
+                    // 指定番地のデータを読み込み
+                    mem_addr_next = counter << 2; // 4バイト単位でアクセスするため、2ビット左シフト
+                    mem_wstrb_next = 4'b0000;
+                    mem_valid_next = 1;
                 end
             end
             2: begin
-                // tick が 25_000_000 になるまで待機
-                if (tick == 25_000_000) begin
-                    // 1秒経過
-                    step_next = 3; // ステップ0へ遷移
-                    tick_next = 0; // 1秒待機用のカウンタをリセット
-                end else begin
-                    tick_next = tick + 1;
-                end
-            end
-            3: begin
-                // メモリの 0x04 番地を読み込み
-                mem_addr_next = 32'h0004;
-                mem_wstrb_next = 4'b0000;
-                if (mem_ready) begin
-                    // mem_ready がアサートされるまで待機
-                    mem_valid_next = 0; // mem_valid をデアサート
-                    step_next = 4; // ステップ4へ遷移
-                    tick_next = 0; // 1秒待機用のカウンタをリセット
-                    led_next = mem_rdata; // 読み込んだデータをLEDに表示
-                end else begin
-                    mem_valid_next = 1; // mem_valid をアサート
-                end
-            end
-            4: begin
-                // tick が 25_000_000 になるまで待機
-                if (tick == 25_000_000) begin
-                    // 1秒経過
-                    step_next = 0; // ステップ0へ遷移
-                    tick_next = 0; // 1秒待機用のカウンタをリセット
+                // 0.1 秒スリープ
+                if (tick == 2_500_0000) begin
+                    // スリープ終わり
+                    step_next = 1; // ステップ1へ遷移
+                    tick_next = 0; // 待機用のカウンタをリセット
                 end else begin
                     tick_next = tick + 1;
                 end
             end
             default: begin
-                // 何もしない
-                step_next = 1'bx; // ステップ0へ遷移
-                mem_valid_next = 1'bx;
-                mem_addr_next = 32'hxxxx;
-                mem_wdata_next = 32'hxxxx;
-                mem_wstrb_next = 4'bxxxx;
-                led_next = 8'hxx;
-                tick_next = 32'hxxxx;
+                // step の値が不正な場合
+                step_next = 0; // ステップ0へ戻す
             end
         endcase
     end
