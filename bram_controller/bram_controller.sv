@@ -12,26 +12,25 @@ module bram_controller(
     input wire [3:0]  mem_wstrb, // 0'b0000 の場合は読み込み、0'b1111 の場合は書き込み
     output logic [31:0] mem_rdata
 );
-    parameter STATE_IDLE = 2'd0;
-    parameter STATE_RECV_VALID = 2'd1;
-    parameter STATE_RECV_VALID2 = 2'd2;
-    parameter STATE_SEND_READY = 2'd3;
+
+    typedef enum logic [2:0] {
+        STATE_IDLE,
+        STATE_MEMORY_RW_WAIT1,
+        STATE_MEMORY_RW_WAIT2,
+        STATE_SEND_READY
+    } state_t;
+    state_t state_reg, state_next;
 
     //------------------------
     // デバッグ用モニタの設定
     //------------------------
     initial begin
-        $monitor("%t: state = %d, reset_n = %b, mem_valid = %b, mem_ready = %b, mem_addr = %h, mem_wdata = %h, mem_wstrb = %b, mem_rdata = %h", $time, state, reset_n, mem_valid, mem_ready, mem_addr, mem_wdata, mem_wstrb, mem_rdata);
+        $monitor("%t: state = %d, reset_n = %b, mem_valid = %b, mem_ready = %b, mem_addr = %h, mem_wdata = %h, mem_wstrb = %b, mem_rdata = %h", $time, state_reg, reset_n, mem_valid, mem_ready, mem_addr, mem_wdata, mem_wstrb, mem_rdata);
     end
 
     logic [31:0] mem [0:1023];
-    logic [2:0] state;
 
-    logic [2:0] state_next;
-    logic mem_ready_next;
-    logic [31:0] mem_rdata_next;
-
-    assign mem_rdata_next = mem[mem_addr[9:2]];
+    assign mem_ready = (state_reg == STATE_SEND_READY) ? 1'b1 : 1'b0;
 
     // メモリの初期化
     initial begin
@@ -50,40 +49,43 @@ module bram_controller(
     end
 
     always_ff @(posedge clk) begin
-        if (!reset_n) begin
-            state = STATE_IDLE;
-            mem_ready = 0;
-            mem_rdata = 32'd0;
-        end else begin
-            state <= state_next;
-            mem_ready <= mem_ready_next;
-            mem_rdata <= mem_rdata_next;
+        if (!reset_n)
+            state_reg <= STATE_IDLE;
+        else begin
+            state_reg <= state_next;
 
             // メモリへの書き込み
             // NOTE: 現状は1ワードの書き込みのみに対応
             if (mem_wstrb == 4'b1111 && mem_valid) begin
                 mem[mem_addr[9:2]] <= mem_wdata;
             end
+
+            // メモリからの読み込み
+            // NOTE: BRAM として推論させるため、クロックの立ち上がりで読み込みを行う
+            mem_rdata <= mem[mem_addr[9:2]];
         end
     end
 
     always_comb begin
-        case (state)
+        case (state_reg)
             STATE_IDLE: begin
-                state_next = (mem_valid) ? STATE_RECV_VALID : STATE_IDLE;
-                mem_ready_next = 0;
+                if (mem_valid) begin
+                    state_next = STATE_MEMORY_RW_WAIT1;
+                end else begin
+                    state_next = STATE_IDLE;
+                end
             end
-            STATE_RECV_VALID: begin
+            STATE_MEMORY_RW_WAIT1: begin
+                state_next = STATE_MEMORY_RW_WAIT2;
+            end
+            STATE_MEMORY_RW_WAIT2: begin
                 state_next = STATE_SEND_READY;
-                mem_ready_next = 1;
             end
             STATE_SEND_READY: begin
                 state_next = STATE_IDLE;
-                mem_ready_next = 0;
             end
             default: begin
                 state_next = STATE_IDLE;
-                mem_ready_next = 0;
             end
         endcase
     end

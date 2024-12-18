@@ -24,8 +24,8 @@ module bram_controller_test();
 
     initial begin
         // dut の波形を出力
-        // $dumpfile("bram_controller_test.vcd");
-        // $dumpvars(0, bram_controller_test);
+        $dumpfile("bram_controller_test.vcd");
+        $dumpvars(0, bram_controller_test);
 
         //--------------------------------------
         // 制御変数の初期化
@@ -57,10 +57,7 @@ module bram_controller_test();
         #10
 
         // mem_ready がアサートされるまで待機
-        while (!mem_ready) begin
-            // 何も行わず 10 ステップ待機
-            #10;
-        end
+        wait (mem_ready == 1);
 
         // mem_ready = 1、かつ mem_rdata = 0x0004 であること
         assert(mem_ready == 1);
@@ -81,10 +78,7 @@ module bram_controller_test();
         #10
 
         // mem_ready がアサートされるまで待機
-        while (!mem_ready) begin
-            // 何も行わず 10 ステップ待機
-            #10;
-        end
+        wait (mem_ready == 1);
 
         // mem_ready = 1 かつ mem_rdata = 0x0008 であること
         assert(mem_ready == 1) else $error("mem_ready = 0");
@@ -105,10 +99,7 @@ module bram_controller_test();
         #10
 
         // mem_ready がアサートされるまで待機
-        while (!mem_ready) begin
-            // 何も行わず 10 ステップ待機
-            #10;
-        end
+        wait (mem_ready == 1);
 
         // mem_ready = 1、かつ mem_rdata = 0x0000FFFF であること
         assert(mem_ready == 1);
@@ -129,10 +120,7 @@ module bram_controller_test();
         #10
 
         // mem_ready がアサートされるまで待機
-        while (!mem_ready) begin
-            // 何も行わず 10 ステップ待機
-            #10;
-        end
+        wait (mem_ready == 1);
 
         // mem_ready = 1、かつ mem_rdata = 0x000FF00 であること
         assert(mem_ready == 1);
@@ -153,10 +141,7 @@ module bram_controller_test();
         #10
 
         // mem_ready がアサートされるまで待機
-        while (!mem_ready) begin
-            // 何も行わず 10 ステップ待機
-            #10;
-        end
+        wait (mem_ready == 1);
 
         // mem_ready = 1、かつ mem_rdata = 0x0000FFFF であること
         assert(mem_ready == 1);
@@ -176,10 +161,7 @@ module bram_controller_test();
         #10
 
         // mem_ready がアサートされるまで待機
-        while (!mem_ready) begin
-            // 何も行わず 10 ステップ待機
-            #10;
-        end
+        wait (mem_ready == 1);
 
         // mem_ready = 1、かつ mem_rdata = 0x0000FFFF であること
         assert(mem_ready == 1);

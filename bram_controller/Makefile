@@ -1,3 +1,5 @@
+.PHONY: all clean prog test
+
 all: ulx3s.bit
 
 clean:
@@ -14,3 +16,6 @@ top.json: top.sv bram_controller.sv
 
 prog: ulx3s.bit
 	fujprog ulx3s.bit
+
+test:
+	iverilog -g 2012 -s bram_controller_test bram_controller_test.sv bram_controller.sv && ./a.out
