@@ -1,5 +1,5 @@
 // bram_controller のテストベンチ
-// $ iverilog bram_controller_tb.sv bram_controller.sv && ./a.out
+// $ iverilog -g 2012 -s bram_controller_test bram_controller_test.sv bram_controller.sv && ./a.out
 module bram_controller_test();
 
     logic clk;
